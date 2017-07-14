@@ -1,0 +1,273 @@
+---
+title: "Multiple Linear Regression on Customer Data"
+author: "Insofe Lab Session"
+date: "July 02 , 2017"
+output:
+  html_document:
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc_depth: '3'
+---
+```{r}
+# Go through the data and understand the attributes to get the info of the variables.
+```
+
+Write a code to clear the environment if needed
+```{r}
+rm(list=(ls(all=TRUE)))
+
+```
+
+Write a code to set the working directory.
+```{r }
+setwd("C:\\insofe\\lab_assignments\\20170702_Batch30_CSE7302c_CustomerData_Assignment")
+getwd()
+```
+Think and load the libraries as and when required in this place only as best practice
+```{r}
+library(vegan)
+library(corrplot)
+library(dummies)
+library(MASS)
+library(car)
+library(DMwR)
+```
+Write a code to read the csv file as "data" as per required
+```{r eval=TRUE }
+customer_data=read.csv("20170702_Batch30_CSE7302c_CustomerData_Assignment.csv")
+```
+Write a code to know the names of the attributes
+```{r}
+names(customer_data)
+
+```
+Write a code to find the dimensions of the data
+```{r}
+dim(customer_data)
+
+```
+
+Write a code to see the head  and tail of the dataset atleast 10rows
+```{r }
+head(customer_data)
+tail(customer_data)
+
+```
+Write a code to see the data types of the attributes 
+```{r }
+str(customer_data)
+
+```
+Write a code to remove the unuseful variables and store the data 
+```{r }
+customer_data=customer_data[,-c(1)]
+
+```
+Write a code to observe the variables and convert them into the required formats
+```{r}
+str(customer_data)
+cus_data_cat=c("FavoriteChannelOfTransaction","FavoriteGame")
+
+customer_data[,cus_data_cat]=data.frame(apply(customer_data[,cus_data_cat],2,function(x) as.factor(as.character(x))))
+  
+```
+Check the changes again using str() command
+```{r }
+str(customer_data)
+names(customer_data)
+
+```
+Write a Code to seperate the target
+```{r}
+customer_data_sep_target=customer_data[,-c(13)]
+names(customer_data_sep_target)
+
+```
+Write a code to get the numerical attributes out and store them as data_num
+```{r }
+
+cus_data_num=c(setdiff(names(customer_data_sep_target),cus_data_cat))
+
+
+```
+Perform binning on city,No of Children, Minimum age of the child,Maximum age of the child
+```{r}
+customer_num = customer_data_sep_target[cus_data_num]
+customer_cat = customer_data_sep_target[cus_data_cat]
+
+#library(infotheo)
+
+#customer_num[,1]<- discretize(customer_num[,1], disc="equalfreq",nbins=2)
+#customer_num[,2]<- discretize(customer_num[,2], disc="equalfreq",nbins=3)
+#customer_num[,3]<- discretize(customer_num[,3], disc="equalfreq",nbins=3)
+#customer_num[,4]<- discretize(customer_num[,4], disc="equalfreq",nbins=3)
+
+head(customer_num)
+tail(customer_num)
+```
+Write a code for Normalizing the data_num
+```{r}
+
+
+#customer_num_standardized <- decostand(customer_num,"standardize") # Using Z score method
+#summary(customer_num_standardized)
+
+```
+Write a code to observe the correlation between the  attributes 
+```{r}
+customer_num_final = cbind(customer_num,TotalRevenueGenerated=customer_data[,c(13)])
+cor(customer_num_final)
+
+```
+Write a code to plot the corrplot of correlation between the attributes
+```{r}
+
+corrplot(cor(customer_num_final), method = "number")
+names(customer_num_final)
+
+```
+Write a code to seperate the categorical attributes
+```{r}
+print("Done already")
+
+```
+Write a code to combine the numerical,categorical data along with the target 
+```{r}
+
+customer_num_final_with_cat = cbind(customer_num_final,customer_cat)
+names(customer_num_final_with_cat)
+
+```
+Create Dummy variables for FavoriteChannelOfTransaction and FavoriteGame
+
+```{r}
+#table(customer_num_final_with_cat_target$FavoriteChannelOfTransaction,customer_num_final_with_cat_target$FavoriteGame)
+
+#df_final_dummy1<-dummy(customer_num_final_with_cat_target$FavoriteChannelOfTransaction)
+#colnames(df_final_dummy1)=c("FavoriteChannelOfTransaction1","FavoriteChannelOfTransaction2")
+
+#customer_num_final_dum1 <- data.frame(customer_num_final_with_cat_target,df_final_dummy1)
+#names(customer_num_final_dum1)
+
+
+#df_final_dummy2<-dummy(customer_num_final_with_cat_target$FavoriteGame)
+#colnames(df_final_dummy2)=c("FavoriteGame1","FavoriteGame2","FavoriteGame3")
+#customer_num_final_dum2 <- data.frame(customer_num_final_dum1,df_final_dummy2)
+#names(customer_num_final_dum2)
+
+#customer_num_final_with_cat=customer_num_final_with_cat[,-c(10)]
+#names(customer_num_final_with_cat)
+
+```
+Check for NA values
+```{r}
+
+sum(is.na(customer_num_final_with_cat))
+
+```
+
+
+Write a code to set the seed and comment why it is used.
+
+   **Ans** Set seed is used so that we get a random data set that is reproducible. 
+```{r}
+
+set.seed(123)
+
+```
+Write a code to get the train rows using sample 
+```{r}
+
+train_rows <- sample(x = 1:nrow(customer_num_final_with_cat), size = 0.7*nrow(customer_num_final_with_cat))
+
+```
+Write a code to get the train and test 
+```{r}
+train_data <- customer_num_final_with_cat[train_rows, ]
+
+test_data <- customer_num_final_with_cat[-train_rows, ]
+
+head(train_data)
+head(test_data)
+#plot(customer_num_final_dum$TotalRevenueGenerated, customer_num_final_dum$NoOfChildren, xlab = #"TotalRevenueGenerated", ylab = "NoOfChildren", main = "TotalRevenueGenerated vs NoOfChildren")
+
+```
+Write a code to form a linear regression model 
+```{r}
+model_basic <- lm(formula = TotalRevenueGenerated~. , data = train_data)
+model_basic
+```
+Write a code to plot the model
+```{r}
+
+par(mfrow = c(2,2))
+
+plot(model_basic)
+
+```
+Write a code to check the summary of the model 
+```{r}
+
+summary(model_basic)
+
+```
+Write a code to predict the value of the target on the linear model 
+```{r}
+
+preds_model_basic <- predict(model_basic, test_data[, !(names(test_data) %in% c("TotalRevenueGenerated"))])
+preds_model_basic
+```
+Write a code to use stepAIC
+```{r}
+
+model_aic <- stepAIC(model_basic, direction = "both")
+
+summary(model_aic)
+
+```
+Write a code to predict it on stepAIC
+```{r}
+preds_model_aic <- predict(model_aic, test_data[, !(names(test_data) %in% c("TotalRevenueGenerated"))])
+preds_model_aic
+```
+Write a code to check the multicollinearity in the lm model 
+```{r}
+
+vif(model_basic)
+
+```
+Write a code to check the plots of the models
+```{r}
+
+par(mfrow = c(2,2))
+
+plot(model_aic)
+
+```
+
+Write a code to check the multicollinearity problem
+```{r}
+
+vif(model_aic)
+
+
+```
+Write a code to evaluate the error in the prediction of AIC
+
+```{r}
+
+
+regr.eval(test_data$TotalRevenueGenerated, preds_model_aic)
+```
+Write a code to evaluate the error on the prediction of Linear Regression
+```{r}
+
+
+regr.eval(test_data$TotalRevenueGenerated, preds_model_basic)
+```
+
+
+
+
+
